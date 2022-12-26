@@ -27,7 +27,7 @@ export default ContactList;
 
 ContactList.propTypes = {
     contacts: PropTypes.arrayOf(PropTypes.shape({
-        value: PropTypes.string.isRequired,
+        name: PropTypes.string.isRequired,
         number: PropTypes.string.isRequired,
         id: PropTypes.string.isRequired,
     })),

@@ -1,93 +1,87 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import Form from './Form/Form';
 import ContactList from './ContactList/ContactList';
 import Section from './Section/Section';
 import Filter from './Filter/Filter';
 import { AppStyled } from './App.styled';
+// import PropTypes from 'prop-types';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
-
-  createNewContact = currentValue => {
-    const alreadyAdded = this.state.contacts.some(
-      obj => obj.name === currentValue.name
+export function App() {
+  const [contacts, setContacts] = useState(() => {
+    return (
+      JSON.parse(localStorage.getItem('contacts')) ?? [
+        { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+        { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+        { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+        { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+      ]
     );
-    alreadyAdded
-      ? alert(`${currentValue.name} is already in contacts`)
-      : this.setState(prevState => {
-        const newContact = {
-          name: currentValue.name,
-          id: nanoid(),
-          number: currentValue.number,
-        };
-        return { contacts: [...prevState.contacts, newContact] };
-      });
-  };
+  });
+  const [filter, setFilter] = useState('');
 
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(
-        contact => contact.id !== contactId
-      ),
-    }));
-  };
-
-  changeFilter = e => {
-    this.setState({ filter: e.target.value });
-  };
-
-
-  componentDidMount() {
-    // console.log("Component Did Mount")
-
-    const contacts = localStorage.getItem("contacts");
+  useEffect(() => {
+    const contacts = localStorage.getItem('contacts');
     const parsedContacts = JSON.parse(contacts);
 
     if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
+      setContacts(parsedContacts);
     }
-  }
+  }, []);
 
-  componentDidUpdate(prevProps, prevState) {
-    // console.log(prevState)
-    // console.log(this.state)
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-    if (this.state.contacts !== prevState.contacts) {
+  const createNewContact = ({ name, number }) => {
+    const contact = {
+      id: nanoid(),
+      name,
+      number,
+    };
 
-      localStorage.setItem("contacts", JSON.stringify(this.state.contacts));
+    const existingContact = contacts.find(
+      contact => contact.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existingContact) {
+      alert(`${name} is already in contacts`);
+    } else {
+      setContacts([...contacts, contact]);
     }
-  }
+  };
 
-  render() {
-    const normalizedFilter = this.state.filter.toLowerCase();
-    const filtredContacts = this.state.contacts.filter(contact =>
+  const changeFilter = e => {
+    setFilter(e.currentTarget.value);
+  };
+
+  const filtredContacts = () => {
+    const normalizedFilter = filter.toLowerCase();
+
+    return contacts.filter(contact =>
       contact.name.toLowerCase().includes(normalizedFilter)
     );
-    return (
-      <AppStyled>
-        <Section title="Phonebook">
-          <Form onSubmit={this.createNewContact} />
-        </Section>
-        <Section title="Contacts">
-          <Filter
-            value={this.state.filter}
-            onChange={this.changeFilter}
-          />
-          <ContactList
-            contacts={filtredContacts}
-            onDelete={this.deleteContact}
-          />
-        </Section>
-      </AppStyled>
-    );
-  }
-}
+  };
+
+  const deleteContact = id => {
+    setContacts(prevState => prevState.filter(contact => contact.id !== id));
+  };
+
+  return (
+    <AppStyled>
+      <Section title="Phonebook">
+        <Form onSubmit={createNewContact} />
+      </Section>
+      <Section title="Contacts">
+        <Filter
+          value={filter}
+          onChange={changeFilter}
+        />
+        <ContactList
+          contacts={filtredContacts()}
+          onDelete={deleteContact}
+        />
+      </Section>
+    </AppStyled>
+  );
+};
